@@ -20,7 +20,14 @@ public:
 	/**
 	@brief Creates a blank MapRoom
 	*/
+	MapRoom(Vec2 rp);
+
+
+	/**
+	@brief Creates a blank MapRoom
+	*/
 	MapRoom();
+
 
 	/**
 	@brief Creates a MapRoom using the map
@@ -30,7 +37,7 @@ public:
 	/**
 	@brief Creates a MapRoom using the imported data
 	*/
-	MapRoom::MapRoom(MapManager *mpmng, Vec2 pos, int e, int index);
+	MapRoom::MapRoom(MapManager *mpmng, Vec2 pos, int e, int index, Vec2 rp);
 
 
 	/**
@@ -105,7 +112,9 @@ public:
 	void setExists(bool e);
 
 
-	void changeTileType(std::string layer, Vec2 tilePos, std::string tileID, TileTypeManager *ttmng);
+	void changeTileType(std::string layer, Vec2 mousePos, std::string tileID, TileTypeManager *ttmng);
+
+	void changeTileType(std::string layer, Vec2 mousePos, std::string tileID, TileTypeManager *ttmng, int t);
 
 	std::unordered_map<std::string, std::vector<std::vector<std::string>>> getRoomTilesStrings();
 
@@ -118,6 +127,8 @@ public:
 	Creature* getCreatureByIndex(int index);
 
 	int getNumCreatures();
+
+	void setPosition(Vec2 pos);
 
 	
 
@@ -157,4 +168,6 @@ private:
 	Character *player;
 
 	bool exists = false;
+
+	Vec2 renderPosition;
 };

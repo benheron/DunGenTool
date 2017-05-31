@@ -255,31 +255,31 @@ void GameState::update(float dt)
 	Vec2 cm = randFloor->getCurRoomPos();
 	Vec2 cp = player->getPosition();
 
-	if (curPos.x < -8)
+	if (curPos.x < 2)
 	{
 		randFloor->setCurRoomPos(Vec2((cm.x - 1), cm.y));
 		player->setPosition(Vec2(624.0f, cp.y));
 		currentMap = randFloor->getCurMap();
 	}
 
-	if (curPos.x > 632)
+	if (curPos.x > 642)
 	{
 		randFloor->setCurRoomPos(Vec2((cm.x + 1), cm.y));
-		player->setPosition(Vec2(0.0f, cp.y));
+		player->setPosition(Vec2(10.f, cp.y));
 		currentMap = randFloor->getCurMap();
 	}
 
-	if (curPos.y < -8) 
+	if (curPos.y < 34) 
 	{
 		randFloor->setCurRoomPos(Vec2(cm.x, (cm.y-1)));
-		player->setPosition(Vec2(cp.x, 464.0f));
+		player->setPosition(Vec2(cp.x, 506.0f));
 		currentMap = randFloor->getCurMap();
 	}
 
-	if (curPos.y > 472)
+	if (curPos.y > 514)
 	{
 		randFloor->setCurRoomPos(Vec2(cm.x, (cm.y + 1)));
-		player->setPosition(Vec2(cp.x, 0.0f));
+		player->setPosition(Vec2(cp.x, 42.f));
 		currentMap = randFloor->getCurMap();
 	}
 

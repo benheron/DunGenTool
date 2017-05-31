@@ -16,7 +16,7 @@ RandMap::RandMap(MapManager *mpmng)
 RandMap::RandMap(MapManager *mpmng, TileTypeManager *ttmng, CreatureManager *cmng, int rooms)
 {
 	dimens = Vec2(32 * 20, 32 * 15);
-	pos = Vec2(0, 0);
+	pos = Vec2(10, 42);
 	
 	int a = Utility::randomInt(1, 9);
 	int b = Utility::randomInt(1, 9);
@@ -70,7 +70,7 @@ RandMap::RandMap(MapManager *mpmng, TileTypeManager *ttmng, CreatureManager *cmn
 
 
 	dimens = Vec2(32 * 20, 32 * 15);
-	pos = Vec2(0, 0);
+	pos = Vec2(10, 42);
 }
 
 
@@ -133,7 +133,7 @@ void RandMap::createFloor(MapManager *mpmng, TileTypeManager *ttmng, CreatureMan
 		for (int j = 0; j < maxSize; j++) {
 			//thisFloor[i].push_back(new MapRoom(mpmng, Vec2(i, j), test[i][j]));
 			floorArray[i].push_back(0);
-			thisFloor[i].push_back(new MapRoom());
+			thisFloor[i].push_back(new MapRoom(Vec2(10, 42)));
 		}
 	}
 

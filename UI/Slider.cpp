@@ -28,6 +28,9 @@ Slider::Slider(Texture *t, Vec2 p, Vec2 d, int v, TextImageManager *timng)
 	Vec2 n = Vec2(nstx, nsty);
 
 	sliderTextValue = new Text(n, 20, "asd", 32, Utility::intToString(value), timng);
+	sliderTextValue->setAlign(centreAlign);
+
+	sliderTextValue->changeTextPosition(Vec2(8, 0));
 
 
 

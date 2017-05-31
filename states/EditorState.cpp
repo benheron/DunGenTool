@@ -9,7 +9,7 @@ EditorState::EditorState(StateManager* manager, Platform *platform, DataManager 
 	: State(manager, platform), dtmng(dtmng)
 {
 	stateName = "EditorState";
-	
+	viewSelected = editSelection;
 }
 
 EditorState::~EditorState()
@@ -21,6 +21,8 @@ bool EditorState::eventHandler()
 {
 	int mouseX, mouseY;
 	SDL_GetMouseState(&mouseX, &mouseY);
+
+	resetView = false;
 
 	mousePos = Vec2(mouseX, mouseY);
 	SDL_Event events;
@@ -75,6 +77,8 @@ bool EditorState::eventHandler()
 					}
 				}
 			}
+
+			menuBar->checkHover(mousePos);
 
 
 			break;
@@ -192,24 +196,6 @@ bool EditorState::eventHandler()
 					playMap = true;
 				}
 
-				//import map button
-				if (Collision::pointBoxCollision(mousePos, impMapBtn->getPosition(), impMapBtn->getDimensions()))
-				{
-					importLevelData();
-				}
-
-				//export map button
-				if (Collision::pointBoxCollision(mousePos, expMapBtn->getPosition(), expMapBtn->getDimensions()))
-				{
-					exportData(0);
-				}
-
-				//export room as template button
-				if (Collision::pointBoxCollision(mousePos, expRoomBtn->getPosition(), expRoomBtn->getDimensions()))
-				{
-					exportRoomAsTemplate();
-				}
-
 				if (Collision::pointBoxCollision(mousePos, paintBtn->getPosition(), paintBtn->getDimensions()))
 				{
 					paintBtn->setSelected(true);
@@ -223,6 +209,55 @@ bool EditorState::eventHandler()
 					eraseBtn->setSelected(true);
 					paintBtn->setIdle();
 				}
+				
+				std::string mbSelect = menuBar->checkSelected(mousePos);
+
+				if (mbSelect != "None" && mbSelect != "bar")
+				{
+					viewSelected = menuBarSelection;
+					/*if (mbSelect == "IRT")
+					{
+
+					}*/
+					//import map button
+					if (mbSelect == "IFM")
+					{
+						importLevelData();
+					}
+					//export room as template button
+					if (mbSelect == "ETRT")
+					{
+						exportRoomAsTemplate();
+					}
+					//export map button
+					if (mbSelect == "EM")
+					{
+						exportData(0);
+					}
+
+					resetView = true;
+				}
+				else {
+					viewSelected = editSelection;
+				}
+
+				if (Collision::pointBoxCollision(mousePos, menuBar->getPosition(), menuBar->getDimensions()))
+				{
+					
+					viewSelected = menuBarSelection;
+				}
+				else {
+
+				//	viewSelected = editSelection;
+				}
+
+				/*if (menuBar->checkSelected(mousePos))
+				{
+					viewSelected = menuBarSelection;
+				}
+				else {
+					viewSelected = editSelection;
+				}*/
 
 
 			break;
@@ -280,63 +315,71 @@ void EditorState::update(float dt)
 		stateManager->addState(new GameState(stateManager, platform, dtmng, randFloor, 1));
 	}
 
-
-	//add tiles or creatures to the map itself
-	if (changingTiles)
+	
+	if (viewSelected == editSelection && !resetView)
 	{
-		if (Collision::pointBoxCollision(mousePos, randFloor->getPosition()+Vec2(32,32), randFloor->getDimensions() - Vec2(64,64)))
+		//add tiles or creatures to the map itself
+		if (changingTiles)
 		{
-			if (paintBtn->getSelected())
+			if (Collision::pointBoxCollision(mousePos, randFloor->getPosition() + Vec2(32, 32), randFloor->getDimensions() - Vec2(64, 64)))
 			{
-				if (tileSelection->getTypeSelected() == "O")
+				if (paintBtn->getSelected())
 				{
-					randFloor->getCurMap()->changeTileType("O", mousePos / 32, tileTypeSelected, dtmng->getTileTypeManager());
+					if (tileSelection->getTypeSelected() == "O")
+					{
+						randFloor->getCurMap()->changeTileType("O", mousePos, tileTypeSelected, dtmng->getTileTypeManager(), 0);
+					}
+					else if (tileSelection->getTypeSelected() == "B") {
+						randFloor->getCurMap()->changeTileType("B", mousePos, tileTypeSelected, dtmng->getTileTypeManager(), 0);
+					}
+					else if (tileSelection->getTypeSelected() == "C") {
+						randFloor->getCurMap()->addCreature(mousePos, dtmng->getCreatureManager()->getCreatureType("A0"));
+					}
 				}
-				else if (tileSelection->getTypeSelected() == "B") {
-					randFloor->getCurMap()->changeTileType("B", mousePos / 32, tileTypeSelected, dtmng->getTileTypeManager());
-				}
-				else if (tileSelection->getTypeSelected() == "C") {
-					randFloor->getCurMap()->addCreature(mousePos, dtmng->getCreatureManager()->getCreatureType("A0"));
-				}
-			}
-			else if (eraseBtn->getSelected()) {
-				if (tileSelection->getTypeSelected() == "O")
-				{
-					randFloor->getCurMap()->changeTileType("O", mousePos / 32, "XX", dtmng->getTileTypeManager());
-				}
-				else if (tileSelection->getTypeSelected() == "B") {
-					randFloor->getCurMap()->changeTileType("B", mousePos / 32, "XX", dtmng->getTileTypeManager());
-				}
-				else if (tileSelection->getTypeSelected() == "C") {
-					randFloor->getCurMap()->changeTileType("C", mousePos / 32, "XX", dtmng->getTileTypeManager());
+				else if (eraseBtn->getSelected()) {
+					if (tileSelection->getTypeSelected() == "O")
+					{
+						randFloor->getCurMap()->changeTileType("O", mousePos, "XX", dtmng->getTileTypeManager(), 0);
+					}
+					else if (tileSelection->getTypeSelected() == "B") {
+						randFloor->getCurMap()->changeTileType("B", mousePos, "XX", dtmng->getTileTypeManager(), 0);
+					}
+					else if (tileSelection->getTypeSelected() == "C") {
+						randFloor->getCurMap()->changeTileType("C", mousePos, "XX", dtmng->getTileTypeManager(), 0);
+					}
 				}
 			}
 		}
 	}
+	
 }
 
 void EditorState::render()
 {
-
+	editBgTexture->pushSpriteToScreen(platform->getRenderer(), 0);
 	randFloor->getCurMap()->render(platform->getRenderer());
 	//room grid
 	for (int i = 1; i < 20; i ++)
 	{
-		white->pushToScreen(platform->getRenderer(), Vec2(i * 32, 32), Vec2(1, 13*32));
+		white->pushToScreen(platform->getRenderer(), Vec2(i * 32 + 10, 32 + 42), Vec2(1, 13*32));
 	}
 	for (int j = 1; j < 15; j++)
 	{
-		white->pushToScreen(platform->getRenderer(), Vec2(32, j*32), Vec2(18*32,1));
+		white->pushToScreen(platform->getRenderer(), Vec2(32 + 10, j*32 + 42), Vec2(18*32,1));
 	}
+
+	toolBgTexture->pushSpriteToScreen(platform->getRenderer(), toolbgpos);
+	black->pushToScreen(platform->getRenderer(), toolbgpos, Vec2(1, 540));
+	black->pushToScreen(platform->getRenderer(), Vec2(0.f, menuBar->getDimensions().y), Vec2(platform->getWindowSize().x, 1.f));
 
 	//minimap grid
 	for (int i = 0; i < 11; i++)
 	{
-		white->pushToScreen(platform->getRenderer(), Vec2(700+(i * 20), 15), Vec2(1, 10 * 15));
+		white->pushToScreen(platform->getRenderer(), Vec2(700+(i * 20), 36), Vec2(1, 10 * 15));
 	}
 	for (int j = 0; j < 11; j++)
 	{
-		white->pushToScreen(platform->getRenderer(), Vec2(700, 15+(j * 15)), Vec2(10 * 20, 1));
+		white->pushToScreen(platform->getRenderer(), Vec2(700, 36+(j * 15)), Vec2(10 * 20, 1));
 	}
 
 	
@@ -344,22 +387,6 @@ void EditorState::render()
 	numRoomsSlider->render(platform->getRenderer());
 
 	
-
-	//int nstx = (2 * numRoomsSlider->getPosition().x + numRoomsSlider->getDimensions().x) / 2 -(numRoomsText->getDimensions().x / 2);
-	//int nsty = numRoomsSlider->getPosition().y + numRoomsSlider->getDimensions().y + 5;
-
-	//Vec2 numSliderTextPos = Vec2(nstx, nsty);
-
-	/*if (numRoomsSlider->getValue() >  9)
-	{
-		numRoomsText->renderText(platform->getRenderer(), numSliderTextPos, 20);
-
-	}
-	else {
-		numRoomsText->renderText(platform->getRenderer(), numSliderTextPos, Vec2(10, 20));
-	}*/
-
-
 	tileSelection->render(platform->getRenderer());
 
 
@@ -378,21 +405,27 @@ void EditorState::render()
 	objLayerBtn->render(platform->getRenderer());
 	crLayerBtn->render(platform->getRenderer());
 
-	for (int i = 0; i < editorButtons.size(); i++)
-	{
-		editorButtons[i]->render(platform->getRenderer());
-	}
+	
 	/*testMapBtn->render(platform->getRenderer());
 	expMapBtn->render(platform->getRenderer());
 	impMapBtn->render(platform->getRenderer());
 	expRoomBtn->render(platform->getRenderer());
 	genMapBtn->render(platform->getRenderer());*/
 
-	enemy->render(platform->getRenderer());
+	if (crLayerBtn->getSelected())
+	{
+		enemy->render(platform->getRenderer());
+	}
+	//enemy->render(platform->getRenderer());
 
 
 	mm->render(platform->getRenderer());
 
+	menuBar->render(platform->getRenderer());
+	for (int i = 0; i < editorButtons.size(); i++)
+	{
+		editorButtons[i]->render(platform->getRenderer());
+	}
 }
 
 void EditorState::load()
@@ -400,11 +433,14 @@ void EditorState::load()
 	//generate-map button
 	//white texture
 	white = new Texture(platform->getRenderer(), 255, 255, 255);
+	black = new Texture(platform->getRenderer(), 0, 0, 0);
 
+	editBgTexture = new Texture("res/img/background.png", platform->getRenderer());
+	toolBgTexture = new Texture("res/img/lighterbackground.png", platform->getRenderer());
 	
 
 	//room slider
-	numRoomsSlider = new Slider(white, Vec2(700, 245), Vec2(200, 15), 20, dtmng->getTextImageManager());
+	numRoomsSlider = new Slider(white, Vec2(700, 247), Vec2(200, 15), 20, dtmng->getTextImageManager());
 
 	//map
 	randFloor = new RandMap(dtmng->getMapManager(), dtmng->getTileTypeManager(), dtmng->getCreatureManager(), numRoomsSlider->getValue());
@@ -412,17 +448,17 @@ void EditorState::load()
 
 	//minimap
 	mm = new MiniMap(platform->getRenderer(), 1);
-	mm->buildMiniMap(randFloor, Vec2(700, 15));
+	mm->buildMiniMap(randFloor, Vec2(700, 36));
 
 
 	//buttons
 	genTexture = new Texture("res/img/buttons/generateBtn.png", platform->getRenderer());
-	genMapBtn = new Button(genTexture, Vec2(750, 175), Vec2(100, 46), Vec2(0, 0));
+	genMapBtn = new Button(genTexture, Vec2(750, 192), Vec2(100, 46), Vec2(0, 0));
 
 	Texture *testMapTexture = new Texture("res/img/buttons/testmapBtn.png", platform->getRenderer());
-	testMapBtn = new Button(testMapTexture, Vec2(272, 485), Vec2(100, 46), Vec2(0, 0));
+	testMapBtn = new Button(testMapTexture, Vec2(280, 0), Vec2(100, 32), Vec2(0, 0));
 
-	Texture *impTexture = new Texture("res/img/buttons/importBtn.png", platform->getRenderer());
+	/*Texture *impTexture = new Texture("res/img/buttons/importBtn.png", platform->getRenderer());
 	impMapBtn = new Button(impTexture, Vec2(0, 485), Vec2(50, 23), Vec2(0, 0));
 
 	Texture *expTexture = new Texture("res/img/buttons/exportBtn.png", platform->getRenderer());
@@ -430,25 +466,24 @@ void EditorState::load()
 
 
 	Texture *expRoomTexture = new Texture("res/img/buttons/exportRoomBtn.png", platform->getRenderer());
-	expRoomBtn = new Button(expRoomTexture, Vec2(60, 510), Vec2(50, 23), Vec2(0, 0));
+	expRoomBtn = new Button(expRoomTexture, Vec2(60, 510), Vec2(50, 23), Vec2(0, 0));*/
 
 
 	editorButtons.push_back(genMapBtn);
 	editorButtons.push_back(testMapBtn);
-	editorButtons.push_back(impMapBtn);
-	editorButtons.push_back(expMapBtn);
-	editorButtons.push_back(expRoomBtn);
-
-
-
-
-
 	
 
 
+
+
+
+	tileSelctionPos = Vec2(670, 330);
+
+	toolbgpos = Vec2(tileSelctionPos.x - 10, 0.f);
+
 	//tile selection
 	Texture *grey = new Texture(platform->getRenderer(), 128, 128, 128);
-	tileSelection = new TileSelection(Vec2(670, 330), Vec2(8, 5), dtmng->getTileTypeManager(), white, grey);
+	tileSelection = new TileSelection(Vec2(670, 340), Vec2(8, 5), dtmng->getTileTypeManager(), white, grey);
 	tileTypeSelected = "G0";
 	tileSelection->setTypeSelected("B");
 
@@ -457,16 +492,16 @@ void EditorState::load()
 	//layer
 	Texture *btn = new Texture("res/img/buttons/selectBtn.png", platform->getRenderer());
 
-	bgLayerBtn = new Button(btn, Vec2(795, 305), Vec2(16, 16), Vec2(0, 0));
-	objLayerBtn = new Button(btn, Vec2(885, 305), Vec2(16, 16), Vec2(0, 0));
-	crLayerBtn = new Button(btn, Vec2(725, 495), Vec2(16, 16), Vec2(0, 0));
+	bgLayerBtn = new Button(btn, Vec2(795, 315), Vec2(16, 16), Vec2(0, 0));
+	objLayerBtn = new Button(btn, Vec2(885, 315), Vec2(16, 16), Vec2(0, 0));
+	crLayerBtn = new Button(btn, Vec2(735, 505), Vec2(16, 16), Vec2(0, 0));
 	bgLayerBtn->setSelected(true);
 
 	paintTex = new Texture("res/img/buttons/paint.png", platform->getRenderer());
 	eraseTex = new Texture("res/img/buttons/erase.png", platform->getRenderer());
 
-	paintBtn = new Button(paintTex, Vec2(540, 490), Vec2(32, 32), Vec2(0, 0));
-	eraseBtn = new Button(eraseTex, Vec2(572, 490), Vec2(32, 32), Vec2(0, 0));
+	paintBtn = new Button(paintTex, Vec2(540, 0), Vec2(32, 32), Vec2(0, 0));
+	eraseBtn = new Button(eraseTex, Vec2(572, 0), Vec2(32, 32), Vec2(0, 0));
 
 	paintBtn->setSelected(true);
 	eraseBtn->setIdle();
@@ -475,14 +510,17 @@ void EditorState::load()
 	editorButtons.push_back(eraseBtn);
 
 
-	layerText = new Text(Vec2(670, 285), 0, "Arial", 20, "Layer: ", dtmng->getTextImageManager());
-	bgText = new Text(Vec2(690, 305), 0, "Arial", 20, "Background: ", dtmng->getTextImageManager());
-	objText = new Text(Vec2(820, 305), 0, "Arial", 20, "Object: ", dtmng->getTextImageManager());
-	enemyText = new Text(Vec2(670, 493), 0, "Arial", 20, "Enemy: ", dtmng->getTextImageManager());
+	layerText = new Text(Vec2(670, 295), 0, "Arial", 20, "Layer: ", dtmng->getTextImageManager());
+	bgText = new Text(Vec2(690, 315), 0, "Arial", 20, "Background: ", dtmng->getTextImageManager());
+	objText = new Text(Vec2(820, 315), 0, "Arial", 20, "Object: ", dtmng->getTextImageManager());
+	enemyText = new Text(Vec2(670, 503), 0, "Arial", 20, "Enemy: ", dtmng->getTextImageManager());
 
-	enemy = new Creature(grey, Vec2(750, 500), Vec2(13, 19), dtmng->getCreatureManager()->getCreatureType("A0"));
+	enemy = new Creature(grey, Vec2(680, 348), Vec2(13, 19), dtmng->getCreatureManager()->getCreatureType("A0"));
 	
+	barbg = new Texture("res/img/menubarbg.png", platform->getRenderer());
+	optionTexture = new Texture("res/img/menuimage.png", platform->getRenderer());
 
+	menuBar = new MenuBar(barbg, optionTexture, 0, Vec2(platform->getWindowSize().x, 32.f), dtmng->getTextImageManager());
 	 
 }
 
@@ -504,6 +542,10 @@ void EditorState::unload()
 	delete mm;
 	delete genTexture;
 
+	delete barbg;
+	delete optionTexture;
+
+
 	
 }
 
@@ -518,7 +560,7 @@ void EditorState::createNewMap()
 	delete oldFloor;
 
 	MiniMap *newMiniMap = new MiniMap(platform->getRenderer(), 0);
-	newMiniMap->buildMiniMap(randFloor, Vec2(700, 15));
+	newMiniMap->buildMiniMap(randFloor, Vec2(700, 36));
 
 	MiniMap *oldMiniMap = mm;
 	delete oldMiniMap;
@@ -540,7 +582,7 @@ void EditorState::createMapFromFile(MapManager *newmng)
 	delete oldFloor;
 
 	MiniMap *newMiniMap = new MiniMap(platform->getRenderer(), 0);
-	newMiniMap->buildMiniMap(randFloor, Vec2(700, 15));
+	newMiniMap->buildMiniMap(randFloor, Vec2(700, 36));
 
 	MiniMap *oldMiniMap = mm;
 	delete oldMiniMap;

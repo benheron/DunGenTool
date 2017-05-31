@@ -12,7 +12,7 @@ int main(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
-	Platform* platform = new Platform("AINT354");
+	Platform* platform = new Platform("Dungeon Generator Tool");
 
 	int imageFormats = IMG_INIT_JPG | IMG_INIT_PNG;
 	int mixerFormats = MIX_INIT_MP3 | MIX_INIT_OGG;
@@ -35,8 +35,10 @@ int main(int argc, char *argv[])
 	unsigned int lastTime = SDL_GetTicks();
 
 
-	//manager->addState(new GameState(manager, platform));
-	manager->addState(new LoadState(manager, platform));
+	DataManager *dtmng;
+
+	dtmng = new DataManager(platform, manager);
+	manager->addState(new EditorState(manager, platform, dtmng));
 
 	bool done = false;
 
@@ -81,6 +83,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	delete dtmng;
 	delete manager;
 	delete platform;
 	SDL_Quit();

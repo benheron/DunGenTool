@@ -56,9 +56,6 @@ void Button::render(SDL_Renderer *renderer)
 		texture->pushSpriteToScreen(renderer, pos, spritePos, spriteDimensions);
 		break;
 	}
-
-
-
 }
 
 

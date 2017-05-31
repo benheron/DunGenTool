@@ -5,13 +5,12 @@
 
 MapRoom::MapRoom()
 {
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 15; j++)
-		{
+	
+}
 
-		}
-	}
+MapRoom::MapRoom(Vec2 rp)
+{
+	renderPosition = rp;
 }
 
 MapRoom::MapRoom(MapManager *mpmng, Vec2 pos, int e)
@@ -27,7 +26,7 @@ MapRoom::MapRoom(MapManager *mpmng, Vec2 pos, int e)
 }
 
 
-MapRoom::MapRoom(MapManager *mpmng, Vec2 pos, int e, int index)
+MapRoom::MapRoom(MapManager *mpmng, Vec2 pos, int e, int index, Vec2 rp)
 {
 	RoomTemplate *rt = mpmng->getRandomMapFromIndex(index);
 	roomTiles = rt->getRoomTiles();
@@ -37,6 +36,8 @@ MapRoom::MapRoom(MapManager *mpmng, Vec2 pos, int e, int index)
 	roomPos = pos;
 
 	exists = e;
+
+	renderPosition = rp;
 }
 
 
@@ -169,7 +170,7 @@ void MapRoom::createRoom(MapManager *mpmng, TileTypeManager *ttmng, CreatureMana
 
 
 					roomTiles[layerID][y].push_back(
-						new Tile(Vec2((x * 32), (y * 32)), Vec2(32, 32), tileType)
+						new Tile(Vec2((x * 32), (y * 32)) + renderPosition, Vec2(32, 32), tileType)
 					);
 
 				}
@@ -187,7 +188,7 @@ void MapRoom::createRoom(MapManager *mpmng, TileTypeManager *ttmng, CreatureMana
 					{
 
 						CreatureType* creatureType = cmng->getCreatureType(creatureID);
-						Vec2 pos = Vec2((x * 32 + 16 - (creatureType->getSpriteDimensions().x / 2)), (y * 32 + 16 - (creatureType->getSpriteDimensions().y / 2)));
+						Vec2 pos = Vec2((x * 32 + 16 - (creatureType->getSpriteDimensions().x / 2)), (y * 32 + 16 - (creatureType->getSpriteDimensions().y / 2))) + renderPosition;
 						Vec2 spriteDimensions = creatureType->getSpriteDimensions();
 						Texture* creatureTexture = creatureType->getTexture();
 
@@ -272,16 +273,22 @@ void MapRoom::addCreature(Vec2 p, CreatureType *ct)
 
 
 
-	int x = (p.x / 32);
+	//int x = (p.x / 32);
+	int x = (p.x - renderPosition.x) / 32;
 	x *= 32;
-	int y = (p.y / 32);
+	//int y = (p.y / 32);
+	int y = (p.y -renderPosition.y) / 32;
 	y *= 32;
+
+	//int x = (p.x - renderPosition.x) / 32;
 
 	Vec2 np = Vec2(x, y);
 
 
-	int nx = np.x + 16 - (ct->getSpriteDimensions().x / 2);
-	int ny = np.y + 16 - (ct->getSpriteDimensions().y / 2);
+	int nx = np.x + 16 - (ct->getSpriteDimensions().x / 2) + renderPosition.x;
+	int ny = np.y + 16 - (ct->getSpriteDimensions().y / 2) + renderPosition.y;
+	//int nx = np.x;
+	//int ny = np.y;
 
 	Vec2 nnp = Vec2(nx, ny);
 
@@ -366,8 +373,8 @@ int MapRoom::checkCollide(Entity *e)
 		Vec2 localPos = e->getPosition();
 		Vec2 localDimen = e->getDimensions();
 
-		int mx = floor(localPos.x / 32);
-		int my = floor(localPos.y / 32);
+		int mx = floor((localPos.x - renderPosition.x) / 32);
+		int my = floor((localPos.y - renderPosition.y) / 32);
 
 		//Utility::log(Utility::I, "Player Tile position: X: " + Utility::intToString(mx) + " Y: " + Utility::intToString(my));
 
@@ -419,6 +426,9 @@ int MapRoom::checkCollide(Entity *e)
 
 void MapRoom::changeTileType(std::string layer, Vec2 tilePos, std::string tileID, TileTypeManager *ttmng)
 {
+
+
+
 	if (layer != "C")
 	{
 		roomTiles[layer][tilePos.y][tilePos.x]->setTileType(tileID, ttmng);
@@ -451,6 +461,47 @@ void MapRoom::changeTileType(std::string layer, Vec2 tilePos, std::string tileID
 	
 }
 
+void MapRoom::changeTileType(std::string layer, Vec2 mousePos, std::string tileID, TileTypeManager *ttmng, int t)
+{
+
+
+	Vec2 tilePos = (mousePos - renderPosition) / 32;
+
+	if (layer != "C")
+	{
+		roomTiles[layer][tilePos.y][tilePos.x]->setTileType(tileID, ttmng);
+		roomTilesStrings[layer][tilePos.y][tilePos.x] = tileID;
+	}
+
+
+	if (layer == "O" || layer == "C")
+	{
+		for (int i = 0; i < roomCreatures.size(); i++)
+		{
+			Vec2 f = roomCreatures[i]->getPosition();
+			//int chX = f.x / 32;
+
+			int chX = (f.x - renderPosition.x) / 32;
+			chX *= 32;
+			//int chY = f.y / 32;
+			int chY = (f.y - renderPosition.y) / 32;
+			chY *= 32;
+
+			Vec2 checkPos = Vec2(chX, chY);
+
+			Vec2 realTilePos((int)tilePos.x * 32, (int)tilePos.y * 32);
+
+			if (checkPos == realTilePos)
+			{
+				delete roomCreatures[i];
+				roomCreatures.erase(roomCreatures.begin() + i);
+				Utility::log(Utility::I, "Same as another creature");
+			}
+		}
+	}
+
+}
+
 
 
 std::unordered_map<std::string, std::vector<std::vector<std::string>>> MapRoom::getRoomTilesStrings()
@@ -477,4 +528,20 @@ Creature* MapRoom::getCreatureByIndex(int index)
 int MapRoom::getNumCreatures()
 {
 	return roomCreatures.size();
+}
+
+void MapRoom::setPosition(Vec2 pos)
+{
+
+	Vec2 changePos = pos - roomTiles["O"][0][0]->getPosition();
+
+
+	for (int i = 0; i < roomTiles["O"].size(); i++)
+	{
+		for (int j = 0; j < roomTiles["O"][i].size(); j++)
+		{
+			
+				
+		}
+	}
 }

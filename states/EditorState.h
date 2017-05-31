@@ -18,6 +18,7 @@
 
 #include "../entities/Button.h"
 #include "../UI/Slider.h"
+#include "../UI/MenuBar.h"
 
 #include <windows.h>
 
@@ -219,6 +220,26 @@ protected:
 
 	DataManager *dtmng;
 
+
+	Texture* editBgTexture;
+	Texture* toolBgTexture;
 	
+	Vec2 tileSelctionPos;
+	Vec2 toolbgpos;
+
+	Texture* black;
 	
+	MenuBar* menuBar;
+
+	Texture *barbg;
+	Texture *optionTexture;
+
+	enum viewSelection {
+		menuBarSelection,
+		editSelection
+	};
+
+	viewSelection viewSelected;
+
+	bool resetView = false;
 };
