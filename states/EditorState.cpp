@@ -590,6 +590,9 @@ void EditorState::createMapFromFile(MapManager *newmng)
 	mm = newMiniMap;
 
 	currentMap = randFloor->getCurMap();
+
+	randFloor->setCurRoomPos(Vec2(5, 5));
+	mm->update(0.f);
 }
 
 void EditorState::importLevelData()

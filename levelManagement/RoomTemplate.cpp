@@ -15,7 +15,7 @@ RoomTemplate::RoomTemplate(std::unordered_map<std::string, std::vector<std::vect
 
 RoomTemplate::~RoomTemplate()
 {
-	delete player;
+	//delete player;
 }
 
 void RoomTemplate::update(float dt)

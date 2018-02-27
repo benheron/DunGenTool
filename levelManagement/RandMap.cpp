@@ -41,7 +41,7 @@ RandMap::RandMap(MapManager *mpmng, TileTypeManager *ttmng, CreatureManager *cmn
 
 			std::vector<int> tmpI;
 			for (int j = 0; j < maxSize; j++) {
-				thisFloor[i].push_back(new MapRoom());
+				thisFloor[i].push_back(new MapRoom(Vec2(10, 42)));
 			}
 		}
 
